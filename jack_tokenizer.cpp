@@ -75,7 +75,7 @@ void jack_tokenizer::tokenize() // main tokenizing function
                 {
                     std::string str;
                     str = get_identifier(); // this will get an identifier
-                    if(str == "class" || str == "constructor" || str == "vfunction" || str == "method" || str == "field" || str == "static" || str == "var" ||
+                    if(str == "class" || str == "constructor" || str == "function" || str == "method" || str == "field" || str == "static" || str == "var" ||
                     str == "int" || str == "char" || str == "boolean" || str == "void" || str == "true" || str == "false" || str == "null" || str == "this" ||
                         str == "let" || str == "do" || str == "if" || str == "else" || str == "while" || str == "return")
                     {
