@@ -25,8 +25,12 @@ jack_analyzer::jack_analyzer(std::string name)
         }
     }
 
-    jack_tokenizer jt{file_name[0]};
-    jt.print();
+    for(int i = 0; i < file_name.size();i++)
+    {
+        std::cout << file_name[i] << std::endl;
+        jack_tokenizer jt{file_name[i]};
+        jt.print();
+    }
 }
 
 

@@ -25,8 +25,6 @@ jack_tokenizer::jack_tokenizer(std::string file_name)
 void jack_tokenizer::tokenize() // main tokenizing function
 {
     char c;
-    c = get_char();
-    std::cout << c;
     while(!EOF_())
     {
         c = get_char();
@@ -185,7 +183,10 @@ bool jack_tokenizer::check_comment()
             c2 = get_char();
         }
     }
-
+    else
+    {
+        current_char_pos -= 1; //if not comment return the last consumed character
+    }
     return flag;
 }
 
