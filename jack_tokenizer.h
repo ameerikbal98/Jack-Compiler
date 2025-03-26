@@ -52,8 +52,6 @@ private:
 
     //----------------------------------------------------------------------------------------
 
-    std::vector<std::string> keywords {"class","method","function","constructor","int","boolean","char","void","var","static","field","let","do","if","else","while","return","true","false","null","this"};
-
 
 public:
     jack_tokenizer(std::string); //this class takes the file as a string
@@ -72,8 +70,8 @@ public:
 
     keyword_type return_keyword_type()
     {
-        auto it = std::find(keywords.begin(), keywords.end(), token_list[current_token].token_name);
-        return static_cast<keyword_type>(it - keywords.begin());
+        auto it = std::find(cbegin(keywords), cend(keywords), token_list[current_token].token_name);
+        return static_cast<keyword_type>(it - cbegin(keywords));
     }
 
     char return_symbol()
