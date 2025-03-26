@@ -32,7 +32,7 @@ void jack_tokenizer::tokenize() // main tokenizing function
         switch (c)
         {
             case '{': case '}': case '(': case ')': case ';': case '.': case '[': case ']': case ',':
-            case '+': case '=': case '*': case '&': case '|': case '<': case '>': case '-':
+            case '+': case '=': case '*': case '&': case '|': case '<': case '>': case '-': case '~':
                 token_list.push_back(token{token_type::SYMBOL,std::string{c},line_num});
                 break;
 
@@ -77,12 +77,16 @@ void jack_tokenizer::tokenize() // main tokenizing function
                     str == "int" || str == "char" || str == "boolean" || str == "void" || str == "true" || str == "false" || str == "null" || str == "this" ||
                         str == "let" || str == "do" || str == "if" || str == "else" || str == "while" || str == "return")
                     {
-                        token_list.push_back(token{token_type::KEYWORD,str,line_num});
+                        token_list.push_back(token{token_type::KEYWORD,str,line_num}); //this is an token
                     }
                     else
                     {
-                        token_list.push_back(token{token_type::IDENTIFIER,str,line_num});
+                        token_list.push_back(token{token_type::IDENTIFIER,str,line_num}); //this is an identifier
                     }
+                }
+                else
+                {
+                    std::cerr << "Error at line: " << line_num << std::endl;
                 }
                 break;
             }
@@ -93,7 +97,7 @@ void jack_tokenizer::tokenize() // main tokenizing function
     }
 }
 
-//==================================================================================================================================
+//====================================================================================================================================================================
 char jack_tokenizer::get_char() //returns next character from the file
 {
     char c;
@@ -106,7 +110,7 @@ char jack_tokenizer::get_char() //returns next character from the file
             line_num+=1;
             
         }
-        current_char_pos = 0;
+        current_char_pos = 0; //set the position to 0
         
     }
     c = line[current_char_pos];
@@ -116,22 +120,19 @@ char jack_tokenizer::get_char() //returns next character from the file
 }
 
 
-//=====================================================================================================================================
+//=========================================================================================================================================================================
 bool jack_tokenizer::EOF_() //returns whether the file have reached the end of file
 {
     bool flag = false;
-    if(current_char_pos == line.length())
+    if(current_char_pos == line.length() && filehandle.peek() == EOF)
     {
-        if(filehandle.peek() == EOF)
-        {
-            flag =  true; //returns true if its the end of file
-        }
+        flag =  true; //returns true if its the end of file
     }
     return flag;
 }
 
 
-//==========================================================================================================================================
+//========================================================================================================================================================================
 
 std::string jack_tokenizer::get_num()
 {
@@ -147,7 +148,7 @@ std::string jack_tokenizer::get_num()
     return num;
 }
 
-//===================================================================================================================================================
+//=======================================================================================================================================================================
 std::string jack_tokenizer::get_string_const() //this function returns the a string until the provided character is found
 {
     std::string str;
@@ -160,7 +161,7 @@ std::string jack_tokenizer::get_string_const() //this function returns the a str
     return str;
 }
 
-//=================================================================================================================================================
+//=======================================================================================================================================================================
 bool jack_tokenizer::check_comment()
 {
     bool flag = 0;
@@ -191,7 +192,7 @@ bool jack_tokenizer::check_comment()
 }
 
 
-//=================================================================================================================================================
+//========================================================================================================================================================================
 
 std::string jack_tokenizer::get_identifier()
 {
@@ -207,7 +208,7 @@ std::string jack_tokenizer::get_identifier()
     return str;
 }
 
-//=======================================================================================================================================================
+//==================================================================================================================================================================
 
 void jack_tokenizer::print()
 {
