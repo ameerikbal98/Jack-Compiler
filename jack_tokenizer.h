@@ -10,13 +10,13 @@
 
 enum token_type
 {
-    KEYWORD,SYMBOL,IDENTIFIER,INT_CONST,STRING_CONST,ERROR
+    KEYWORD,SYMBOL,IDENTIFIER,INT_CONST,STRING_CONST
 };
 const std::string token_names[] {"KEYWORD","SYMBOL","IDENTIFIER","INTEGER_CONSTANT","STRING_CONSTANT"};
 //======================================================================================================================================================
 enum keyword_type
 {
-    CLASS,METHOD,FUNCTION,CONSTRUCTOR,INT,BOOLEAN,CHAR,VOID,VAR,STATIC,FIELD,LET,DO,IF,ELSE,WHILE,RETURN,TRUE,FALSE,NULL_TYPE,THIS,ERROR_TYPE
+    CLASS,METHOD,FUNCTION,CONSTRUCTOR,INT,BOOLEAN,CHAR,VOID,VAR,STATIC,FIELD,LET,DO,IF,ELSE,WHILE,RETURN,TRUE,FALSE,NULL_TYPE,THIS
 };
 
 const std::string keywords[] {"class","method","function","constructor","int","boolean","char","void","var","static","field","let","do","if","else","while","return","true","false","null","this"};
@@ -54,27 +54,68 @@ private:
 
 
 public:
+    jack_tokenizer(){}
     jack_tokenizer(std::string); //this class takes the file as a string
 
-    void print();
+    jack_tokenizer(jack_tokenizer& jt) : token_list{jt.token_list},file_str {jt.file_str},line {jt.line},line_num {jt.line_num},current_char_pos {jt.current_char_pos}
+    {}
 
-    bool has_more_token()
+    jack_tokenizer(jack_tokenizer&& jt) : token_list {std::move(jt.token_list)},file_str {jt.file_str},line {jt.line},line_num {jt.line_num},current_char_pos {jt.current_char_pos}
+    {}
+
+    jack_tokenizer& operator= (jack_tokenizer& jt)
+    {
+        if(this != &jt)
+        {
+            token_list = jt.token_list;
+            file_str = jt.file_str;
+            line = jt.line;
+            line_num = jt.line_num;
+            current_char_pos = jt.current_char_pos;
+        }
+        return *this;
+    }
+
+    jack_tokenizer& operator= (jack_tokenizer&& jt) noexcept
+    {
+        if(this != &jt)
+        {
+            token_list = std::move(jt.token_list);
+            file_str = std::move(jt.file_str);
+            line = jt.line;
+            line_num = jt.line_num;
+            current_char_pos = jt.current_char_pos;
+        }
+        return *this;
+    }
+
+    ~jack_tokenizer() 
+    {
+        if (filehandle.is_open()) 
+        {
+            filehandle.close();
+        }
+    }
+
+    void print();//it will print the entire tokens
+
+    bool has_more_token() //check if there is any more token
     {
         return !(current_token == token_list.size());
     }
     
-    token_type return_token_type()
+    token_type return_token_type() //returns the type of token
     {
         return token_list[current_token].type;
     } 
 
-    keyword_type return_keyword_type()
+    keyword_type return_keyword_type()  //should only be called when token is a keyword
     {
         auto it = std::find(cbegin(keywords), cend(keywords), token_list[current_token].token_name);
         return static_cast<keyword_type>(it - cbegin(keywords));
     }
 
-    char return_symbol()
+    char return_symbol() //only to be called when the token is a symbol
     {
         return token_list[current_token].token_name[0];
     }
@@ -84,16 +125,20 @@ public:
     {
         return token_list[current_token].token_name;
     }
-    int return_integer()
+    int return_integer() //should only be called when the token is an integer constant
     {
         return std::stoi(token_list[current_token].token_name);
     }
 
-    void advance()
+    void advance() //advances the object to the next token
     {
         current_token += 1;
     }
 
+    int return_linenum() //returns the line number of the token as found in the original file
+    {
+        return token_list[current_token].line_num;
+    }
 private:
     //private tokenizing function functions which are called from the constructor
     void tokenize();

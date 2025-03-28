@@ -22,6 +22,14 @@ jack_tokenizer::jack_tokenizer(std::string file_name)
 
 //==================================================================================================================================================================
 //From now own its all tokenizer and its associated functions---------------------------------------------------------------------------------------------
+/*
+Grammer
+
+
+*/
+
+
+
 void jack_tokenizer::tokenize() // main tokenizing function
 {
     char c;
@@ -69,7 +77,7 @@ void jack_tokenizer::tokenize() // main tokenizing function
 
             default:
             {
-                if(isalnum(c)|| c=='_')
+                if(isalpha(c)|| c=='_')
                 {
                     std::string str;
                     str = get_identifier(); // this will get an identifier
