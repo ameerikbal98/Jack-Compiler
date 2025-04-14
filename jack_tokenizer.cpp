@@ -3,22 +3,6 @@
 #include "regex_utils.h"
 #include "jack_tokenizer.h"
 
-//===================================================================================================================================================
-jack_tokenizer::jack_tokenizer(std::string file_name)
-{
-    
-    filehandle.open(file_name);
-    line_num = 0;
-    current_char_pos = 0;
-
-    if (!filehandle.is_open())
-    {
-        throw std::runtime_error("Failed to open file: " + file_name);
-    }
-    tokenize();
-}
-
-
 
 //==================================================================================================================================================================
 //From now own its all tokenizer and its associated functions---------------------------------------------------------------------------------------------
@@ -28,7 +12,8 @@ Grammer
 
 */
 
-
+namespace tokenizer
+{
 
 void jack_tokenizer::tokenize() // main tokenizing function
 {
@@ -200,6 +185,7 @@ bool jack_tokenizer::check_comment()
 }
 
 
+
 //========================================================================================================================================================================
 
 std::string jack_tokenizer::get_identifier()
@@ -224,4 +210,6 @@ void jack_tokenizer::print()
     {
         token_list[i].print();
     }
+}
+
 }

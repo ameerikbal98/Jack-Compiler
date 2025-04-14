@@ -4,6 +4,7 @@
 
 
 namespace fs = std::filesystem;
+using jack_tokenizer = tokenizer::jack_tokenizer;
 
 jack_analyzer::jack_analyzer(std::string name)
 {
@@ -31,24 +32,24 @@ jack_analyzer::jack_analyzer(std::string name)
         jack_tokenizer jt{file_name[i]};
         while(jt.has_more_token())
         {
-            std::cout << token_names[jt.return_token_type()] << " ";
+            std::cout << tokenizer::TOKEN_NAMES[jt.return_token_type()] << " ";
 
-            if(jt.return_token_type() == token_type::KEYWORD)
+            if(jt.return_token_type() == tokenizer::token_type::KEYWORD)
             {
-                std::cout << keywords[jt.return_keyword_type()] << " ";
+                std::cout << tokenizer::KEYWORDS[jt.return_keyword_type()] << " ";
             }
 
-            else if(jt.return_token_type() == token_type::INT_CONST)
+            else if(jt.return_token_type() == tokenizer::token_type::INT_CONST)
             {
                 std::cout << jt.return_integer() << " ";
             }
 
-            else if(jt.return_token_type() == token_type::IDENTIFIER || jt.return_token_type() == token_type::STRING_CONST)
+            else if(jt.return_token_type() == tokenizer::token_type::IDENTIFIER || jt.return_token_type() == tokenizer::token_type::STRING_CONST)
             {
                 std::cout << jt.return_identifier_string_const() << " ";
             }
 
-            else if(jt.return_token_type() == token_type::SYMBOL)
+            else if(jt.return_token_type() == tokenizer::token_type::SYMBOL)
             {
                 std::cout << jt.return_symbol() << " ";
             }
