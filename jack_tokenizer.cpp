@@ -42,7 +42,6 @@ void jack_tokenizer::tokenize() // main tokenizing function
                 std::string str = get_string_const();
 
                 token_list.push_back(token{token_type::STRING_CONST,str,line_num});
-                c = get_char(); // this will consume the " symbol after the string constant
 
                 break;
 

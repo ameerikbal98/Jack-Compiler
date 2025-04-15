@@ -50,6 +50,7 @@ public:
 private:
     void error(std::string what, int line_num) //reports error
     {
+        std::cout << xs.xml_string << std::endl;
         std::cerr << "Syntax Error : " + what + std::to_string(line_num)  << std::endl;
         exit(1);
     }
@@ -57,6 +58,7 @@ private:
     void compile_class();
     void compile_class_var_dec();
     void compile_subroutine();
+    void compile_subroutine_body();
     void compile_parameter_list();
     void compile_var_dec();
     void compile_statements();

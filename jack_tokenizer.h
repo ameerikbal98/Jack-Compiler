@@ -177,6 +177,11 @@ public:
         return token_list[current_token + 1].type;
     }
 
+    void reset_token_seeker()
+    {
+        current_token = 0;
+    }
+
 
     void reverse_seeker() //return the current token seeker one times each call.
     {
