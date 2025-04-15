@@ -13,7 +13,7 @@ void compilation_engine::compile_class()
     {
         xs.enter_tag(std::string("token"),std::string("class"),tab_count);       
         jt.advance();
-        if(jt.return_keyword_type() == token_type::IDENTIFIER)
+        if(jt.return_token_type() == token_type::IDENTIFIER)
         {
             xs.enter_tag(std::string("identifier"),jt.return_identifier_string_const(),tab_count);    
             jt.advance();
@@ -67,7 +67,7 @@ void compilation_engine::compile_class_var_dec() //compiles and create parse tre
     {
         xs.enter_tag("keyword",tokenizer::KEYWORDS[jt.return_keyword_type()],tab_count);    
         jt.advance();
-        if(jt.return_keyword_type() == token_type::IDENTIFIER)
+        if(jt.return_token_type() == token_type::IDENTIFIER)
         {
             xs.enter_tag("identifier",jt.return_identifier_string_const(),tab_count);    
             jt.advance();
@@ -301,7 +301,7 @@ void compilation_engine::compile_statements()
             decrement_tab_count();
             xs.enter_tag("/letStatement",tab_count);
         }
-        else if(jt.return_token_type() == keyword_type::DO)
+        else if(jt.return_keyword_type() == keyword_type::DO)
         {
             xs.enter_tag("doStatement",tab_count);
             increment_tab_count();
@@ -309,7 +309,7 @@ void compilation_engine::compile_statements()
             decrement_tab_count();
             xs.enter_tag("/doStatement",tab_count);
         }
-        else if(jt.return_token_type() == keyword_type::WHILE)
+        else if(jt.return_keyword_type() == keyword_type::WHILE)
         {
             xs.enter_tag("whileStatement",tab_count);
             increment_tab_count();
@@ -317,7 +317,7 @@ void compilation_engine::compile_statements()
             decrement_tab_count();
             xs.enter_tag("/whileStatement",tab_count);
         }
-        else if(jt.return_token_type() == keyword_type::RETURN);
+        else if(jt.return_keyword_type() == keyword_type::RETURN);
         {
             xs.enter_tag("returnStatement",tab_count);
             increment_tab_count();
@@ -430,6 +430,10 @@ void compilation_engine::compile_do()
         xs.enter_tag("symbol",";",tab_count);
         jt.advance();
     }
+    else
+    {
+        error("Expected ;, line: ",jt.return_linenum());
+    }
     return;
 
 }
@@ -454,6 +458,29 @@ void compilation_engine::compile_if()
             if(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '{')
             {
                 xs.enter_tag("symbol","{",tab_count);
+                jt.advance();
+                xs.enter_tag("statements",tab_count);
+                increment_tab_count();
+                compile_statements();
+                decrement_tab_count();
+                xs.enter_tag("/statments",tab_count);
+                if(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '}')
+                {
+                    xs.enter_tag("symbol","}",tab_count);
+                    jt.advance();
+                    if(jt.return_token_type() == token_type::KEYWORD && jt.return_keyword_type() == keyword_type::ELSE)
+                        compile_else();
+                    return;
+                }
+                else
+                {
+                    error("Expected }, line: ",jt.return_linenum());
+                }
+
+            }
+            else
+            {
+                error("Expected { , line: ",jt.return_linenum());
             }
         }
         else
@@ -466,6 +493,37 @@ void compilation_engine::compile_if()
         error("Expected (, line: ",jt.return_linenum());
     }
     return;
+}
+
+void compilation_engine::compile_else()
+{
+    xs.enter_tag("keyword","else",tab_count);
+    jt.advance();
+    if(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '{')
+    {
+        xs.enter_tag("symbo","{",tab_count);
+        jt.advance();
+        xs.enter_tag("statements",tab_count);
+        increment_tab_count();
+        compile_statements();
+        decrement_tab_count();
+        xs.enter_tag("/statments",tab_count);
+        if(jt.return_symbol() == '}')
+        if(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '}')
+        {
+            xs.enter_tag("symbol","}",tab_count);
+            jt.advance();
+            return;
+        }
+        else
+        {
+            error("Expected line: ",jt.return_linenum());
+        }
+    }
+    else
+    {
+        error("Expected line: ",jt.return_linenum());
+    }
 }
 
 
@@ -600,7 +658,7 @@ void compilation_engine::compile_term()
     {
         xs.enter_tag("identifier",jt.return_identifier_string_const(),tab_count);
         jt.advance();
-        if(jt.return_keyword_type() == token_type::SYMBOL && jt.return_symbol() == '[')
+        if(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '[')
         {
             xs.enter_tag("symbol","[",tab_count);
             jt.advance();
@@ -609,11 +667,19 @@ void compilation_engine::compile_term()
             compile_expression();
             decrement_tab_count();
             xs.enter_tag("/expression",tab_count);
-            xs.enter_tag("symbol","]",tab_count);
-            jt.advance();
-            return;
+            if(jt.return_token_type() == ']' && jt.return_symbol() == ']')
+            {
+                xs.enter_tag("symbol","]",tab_count);
+                jt.advance();
+                return;
+            }
+            else
+            {
+                error("Expected ], line: ",jt.return_linenum());
+            }
+            
         }
-        else if(jt.return_keyword_type() == token_type::SYMBOL && jt.return_symbol() == '.')
+        else if(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '.')
         {
             xs.enter_tag("symbol",".",tab_count);
             jt.advance();
@@ -630,7 +696,7 @@ void compilation_engine::compile_term()
                     compile_expression_list();
                     decrement_tab_count();
                     xs.enter_tag("/expressionList",tab_count);
-                    if(jt.return_keyword_type() == token_type::SYMBOL && jt.return_symbol() == ')')
+                    if(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ')')
                     {
                         xs.enter_tag("symbol",")",tab_count);
                         jt.advance();
@@ -685,6 +751,8 @@ void compilation_engine::compile_term()
                 xs.enter_tag("/expression",tab_count);
                 xs.enter_tag("symbol",")",tab_count);
                 break;
+            case ';':
+                return;
             default:
                 error("Wrong symbol, line: ",jt.return_linenum());
                 break;
@@ -728,3 +796,63 @@ void compilation_engine::compile_expression_list()
     }
 }
 
+
+void compilation_engine::compile_while()
+{
+    if(jt.return_token_type() == token_type::KEYWORD && jt.return_keyword_type() == keyword_type::WHILE)
+    {
+        xs.enter_tag("keyword","while",tab_count);
+        jt.advance();
+        if(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '{')
+        {
+            xs.enter_tag("symbol","{",tab_count);
+            jt.advance();
+            xs.enter_tag("statements",tab_count);
+            increment_tab_count();
+            compile_statements();
+            decrement_tab_count();
+            xs.enter_tag("/statments",tab_count);
+            if(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '}')
+            {
+                xs.enter_tag("symbol","}",tab_count);
+                jt.advance();
+                return;
+            }
+            else
+            {
+                error("Expected }, line: ",jt.return_linenum());
+            }
+        }
+        else
+        {
+            error("Expected {, line: ",jt.return_linenum());
+        }
+    }
+}
+
+
+void compilation_engine::compile_return()
+ {
+    if(jt.return_token_type() == token_type::IDENTIFIER && jt.return_keyword_type() == keyword_type::RETURN)
+    {
+        xs.enter_tag("keyword","return",tab_count);
+        jt.advance();
+        if(!(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ';'))
+        {
+            xs.enter_tag("expression",tab_count);
+            increment_tab_count();
+            compile_expression();
+            decrement_tab_count();
+            xs.enter_tag("/expression",tab_count);
+        
+        }
+        if(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ';')
+        {
+            xs.enter_tag("symbol",";",tab_count);
+        }
+        else
+        {
+            error("Expected ;, line: ",jt.return_linenum());
+        }
+    }
+ }

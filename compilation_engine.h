@@ -39,7 +39,12 @@ public:
     void compile()
     {
         compile_class();
-    }  
+    }
+    
+    void print()
+    {
+        std::cout << xs.xml_string << std::endl;
+    }
     
 
 private:
@@ -63,6 +68,7 @@ private:
     void compile_expression();
     void compile_term();
     void compile_expression_list();
+    void compile_else();
 
     void increment_tab_count()
     {
