@@ -159,6 +159,17 @@ void compilation_engine::compile_class()
                     xs.enter_tag(std::string("/subroutineDec"),tab_count);
                     
                 }
+                if(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '}')
+                {
+                    xs.enter_tag("symbol","}",tab_count);
+                    jt.advance();
+                    decrement_tab_count();
+                    xs.enter_tag(std::string("/class"),tab_count);
+                }
+                else
+                {
+                    error("Expected }, line: ",jt.return_linenum());
+                }
                 
             }
             else
