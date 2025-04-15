@@ -4,6 +4,125 @@
 using keyword_type = tokenizer::keyword_type;
 using token_type = tokenizer::token_type;
 
+/*
+======================================
+           Jack Language Grammar
+======================================
+This part in tokenizer:
+Lexical Elements:
+-----------------
+keyword: 
+  class | constructor | function | method | field | static | var |
+  int | char | boolean | void | true | false | null | this |
+  let | do | if | else | while | return
+
+symbol:
+  { } ( ) [ ] . , ; + - * / & | < > = ~
+
+integerConstant:
+  A decimal number in the range 0–32767
+
+stringConstant:
+  A sequence of Unicode characters not including " or newline
+
+identifier:
+  A sequence of letters, digits, and underscore (_) not starting with a digit
+
+This part in compilation engine: 
+Program Structure:
+------------------
+class:
+  class className { classVarDec* subroutineDec* }
+
+classVarDec:
+  (static | field) type varName (',' varName)* ;
+
+type:
+  int | char | boolean | className
+
+subroutineDec:
+  (constructor | function | method)
+  (void | type) subroutineName ( parameterList ) subroutineBody
+
+parameterList:
+  (type varName (',' type varName)*)?
+
+subroutineBody:
+  { varDec* statements }
+
+varDec:
+  var type varName (',' varName)* ;
+
+className:
+  identifier
+
+subroutineName:
+  identifier
+
+varName:
+  identifier
+
+
+Statements:
+-----------
+statements:
+  statement*
+
+statement:
+  letStatement | ifStatement | whileStatement | doStatement | returnStatement
+
+letStatement:
+  let varName ('[' expression ']')? = expression ;
+
+ifStatement:
+  if ( expression ) { statements } (else { statements })?
+
+whileStatement:
+  while ( expression ) { statements }
+
+doStatement:
+  do subroutineCall ;
+
+returnStatement:
+  return expression? ;
+
+
+Expressions:
+------------
+expression:
+  term (op term)*
+
+term:
+  integerConstant | stringConstant | keywordConstant |
+  varName | varName [ expression ] | subroutineCall |
+  ( expression ) | unaryOp term
+
+subroutineCall:
+  subroutineName ( expressionList ) |
+  (className | varName) . subroutineName ( expressionList )
+
+expressionList:
+  (expression (',' expression)*)?
+
+op:
+  + | - | * | / | & | | | < | > | =
+
+unaryOp:
+  - | ~
+
+keywordConstant:
+  true | false | null | this
+
+======================================
+
+This program employs a recursive 
+descent parser to parse the jack 
+program
+
+======================================
+*/
+
+
 
 void compilation_engine::compile_class()
 {
@@ -295,6 +414,52 @@ void compilation_engine::compile_parameter_list()
 }
 
 
+void compilation_engine::compile_var_dec()
+{
+    xs.enter_tag("keyword",tokenizer::KEYWORDS[jt.return_keyword_type()],tab_count);
+    jt.advance();
+    if(jt.return_token_type() == token_type::KEYWORD && (jt.return_keyword_type() == keyword_type::BOOLEAN || jt.return_keyword_type() == keyword_type::CHAR || jt.return_keyword_type() == keyword_type::INT || jt.return_keyword_type() == keyword_type::VOID))
+    {
+        xs.enter_tag("keyword",tokenizer::KEYWORDS[jt.return_keyword_type()],tab_count);
+        jt.advance();        
+    }
+    else if(jt.return_token_type() == token_type::IDENTIFIER)
+    {
+        xs.enter_tag("identifier",jt.return_identifier_string_const(),tab_count);
+        jt.advance();
+    }
+    else
+    {
+        error("Expected type, ",jt.return_linenum());
+    }
+
+    if(jt.return_token_type() == token_type::IDENTIFIER)
+    {
+        xs.enter_tag("identifier",jt.return_identifier_string_const(),tab_count);
+        jt.advance();
+    }
+    else
+    {
+        error("Expected identifier, line:", jt.return_linenum());
+    }
+
+    if(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ';')
+    {
+        xs.enter_tag("symbol",";",tab_count);
+        jt.advance();
+    }
+    else
+    {
+        error("Expected ;, line: ", jt.return_linenum());
+    }
+
+    if(jt.return_token_type() == token_type::KEYWORD && jt.return_keyword_type() == keyword_type::VAR)
+    {
+        compile_var_dec();
+    }
+    return;
+}
+
 void compilation_engine::compile_statements()
 {
     while(jt.return_token_type() == token_type::KEYWORD && (jt.return_keyword_type() == keyword_type::IF || jt.return_keyword_type() == keyword_type::LET ||
@@ -345,51 +510,7 @@ void compilation_engine::compile_statements()
 }
 
 
-void compilation_engine::compile_var_dec()
-{
-    xs.enter_tag("keyword",tokenizer::KEYWORDS[jt.return_keyword_type()],tab_count);
-    jt.advance();
-    if(jt.return_token_type() == token_type::KEYWORD && (jt.return_keyword_type() == keyword_type::BOOLEAN || jt.return_keyword_type() == keyword_type::CHAR || jt.return_keyword_type() == keyword_type::INT || jt.return_keyword_type() == keyword_type::VOID))
-    {
-        xs.enter_tag("keyword",tokenizer::KEYWORDS[jt.return_keyword_type()],tab_count);
-        jt.advance();        
-    }
-    else if(jt.return_token_type() == token_type::IDENTIFIER)
-    {
-        xs.enter_tag("identifier",jt.return_identifier_string_const(),tab_count);
-        jt.advance();
-    }
-    else
-    {
-        error("Expected type, ",jt.return_linenum());
-    }
 
-    if(jt.return_token_type() == token_type::IDENTIFIER)
-    {
-        xs.enter_tag("identifier",jt.return_identifier_string_const(),tab_count);
-        jt.advance();
-    }
-    else
-    {
-        error("Expected identifier, line:", jt.return_linenum());
-    }
-
-    if(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ';')
-    {
-        xs.enter_tag("symbol",";",tab_count);
-        jt.advance();
-    }
-    else
-    {
-        error("Expected ;, line: ", jt.return_linenum());
-    }
-
-    if(jt.return_token_type() == token_type::KEYWORD && jt.return_keyword_type() == keyword_type::VAR)
-    {
-        compile_var_dec();
-    }
-    return;
-}
 
 
 void compilation_engine::compile_let()
@@ -507,7 +628,7 @@ void compilation_engine::compile_if()
     return;
 }
 
-void compilation_engine::compile_else()
+void compilation_engine::compile_else() //this is technically part of if
 {
     xs.enter_tag("keyword","else",tab_count);
     jt.advance();
@@ -538,7 +659,96 @@ void compilation_engine::compile_else()
     }
 }
 
+void compilation_engine::compile_while()
+{
+    if(jt.return_token_type() == token_type::KEYWORD && jt.return_keyword_type() == keyword_type::WHILE)
+    {
+        xs.enter_tag("keyword","while",tab_count);
+        jt.advance();
+    }
 
+    if(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '(')
+    {
+        xs.enter_tag("symbol","(",tab_count);
+        jt.advance();
+    }
+    else
+    {
+        error("Expected (, line: ",jt.return_linenum());
+    }
+
+    xs.enter_tag("expression",tab_count);
+    increment_tab_count();
+    compile_expression();
+    decrement_tab_count();
+    xs.enter_tag("/expression",tab_count);
+    if(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ')')
+    {
+        xs.enter_tag("symbol",")",tab_count);
+        jt.advance();
+    }
+    else
+    {
+        error("Expected ), line: ",jt.return_linenum());
+    }
+
+    if(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '{')
+    {
+        xs.enter_tag("symbol","{",tab_count);
+        jt.advance();
+        xs.enter_tag("statements",tab_count);
+        increment_tab_count();
+        compile_statements();
+        decrement_tab_count();
+        xs.enter_tag("/statments",tab_count);
+        
+    }
+    else
+    {
+        error("Expected {, line: ",jt.return_linenum());
+    }
+    if(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '}')
+    {
+        xs.enter_tag("symbol","}",tab_count);
+        jt.advance();
+        return;
+    }
+    else
+    {
+        error("Expected }, line: ",jt.return_linenum());
+    }
+}
+
+
+void compilation_engine::compile_return() //parses return statement
+ {
+    if(jt.return_token_type() == token_type::KEYWORD && jt.return_keyword_type() == keyword_type::RETURN)
+    {
+        xs.enter_tag("keyword","return",tab_count);
+        jt.advance();
+        if(!(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ';'))
+        {
+            xs.enter_tag("expression",tab_count);
+            increment_tab_count();
+            compile_expression();
+            decrement_tab_count();
+            xs.enter_tag("/expression",tab_count);
+        
+        }
+        if(jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ';')
+        {
+            xs.enter_tag("symbol",";",tab_count);
+            jt.advance();
+        }
+        else
+        {
+            error("Expected ;, line: ",jt.return_linenum());
+        }
+    }
+ }
+
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//This part is parses the expression term--------------------------------------------------------------
 
 void compilation_engine::compile_expression()
 {
