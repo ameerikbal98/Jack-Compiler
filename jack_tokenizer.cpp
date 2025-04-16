@@ -18,10 +18,10 @@ namespace tokenizer
 void jack_tokenizer::tokenize() // main tokenizing function
 {
     char c;
+    
     while(!EOF_())
     {
         c = get_char();
-
         switch (c)
         {
             case '{': case '}': case '(': case ')': case ';': case '.': case '[': case ']': case ',':
@@ -38,7 +38,6 @@ void jack_tokenizer::tokenize() // main tokenizing function
 
             case '"':
             {
-
                 std::string str = get_string_const();
 
                 token_list.push_back(token{token_type::STRING_CONST,str,line_num});
@@ -56,7 +55,7 @@ void jack_tokenizer::tokenize() // main tokenizing function
                 break;
             }
 
-            case ' ':
+            case ' ': case '\t': case '\n': case '\r':
                 break; // do nothing if space comes up
 
             default:
@@ -78,7 +77,7 @@ void jack_tokenizer::tokenize() // main tokenizing function
                 }
                 else
                 {
-                    std::cerr << "Error at line: " << line_num << std::endl;
+                    std::cerr << "Error at line: char " << int(c) <<" " << line_num << std::endl;
                 }
                 break;
             }
@@ -98,6 +97,12 @@ char jack_tokenizer::get_char() //returns next character from the file
         line = "";
         while(line == "")  // loop until we get a non empty line
         {
+            if(filehandle.peek() == EOF) //if we reach the end of file we return a space and set the current char pos to zero so the tokenizer loop will
+                                        // in the next iteration as EOF_() will return true
+            {
+                current_char_pos = 0;
+                return ' ';
+            }
             std::getline(filehandle,line);
             line_num+=1;
             
@@ -167,13 +172,21 @@ bool jack_tokenizer::check_comment()
     {
         flag = 1;
         char c2;
-
-        c = get_char();
-        c2 = get_char();
-        while(c != '*' && c2 != '/')
+        while(true)
         {
+            if(EOF_())
+            {
+                std::cerr << "Commend end not found" << std::endl;
+                exit(0);
+            }
             c = get_char();
-            c2 = get_char();
+            
+            if(c =='*')
+            {
+                c = get_char();
+                if(c == '/')
+                    break;
+            }
         }
     }
     else

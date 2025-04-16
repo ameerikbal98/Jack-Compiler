@@ -12,7 +12,7 @@ struct xml_string //stores the each tags in the xml
         {
             xml_string.append("\t");
         }
-        xml_string.append(std::string("<") + token_element + ">" + token_name + "</" + token_element + ">");
+        xml_string.append(std::string("<") + token_element + "> " + token_name + " </" + token_element + ">");
         xml_string.append("\n");
     }
 
@@ -25,6 +25,11 @@ struct xml_string //stores the each tags in the xml
         xml_string.append(std::string("<") + token_element + ">");
         xml_string.append("\n");
     }
+
+    void reset()
+    {
+        xml_string = "";
+    }
 };
 
 class compilation_engine
@@ -35,7 +40,14 @@ private:
     int tab_count = 0;
 
 public:
+    compilation_engine() = default;
     compilation_engine(tokenizer::jack_tokenizer jt_tmp): jt{jt_tmp} {}
+    void pass_tokenizer(tokenizer::jack_tokenizer jt_tmp) //this will reset the whole engine
+    {
+        jt = jt_tmp;
+        xs.reset();
+        tab_count = 0;
+    }
     void compile()
     {
         compile_class();
@@ -45,12 +57,17 @@ public:
     {
         std::cout << xs.xml_string << std::endl;
     }
+    std::string return_parse_string()
+    {
+        return xs.xml_string;
+    }
     
 
 private:
     void error(std::string what, int line_num) //reports error
     {
         std::cout << xs.xml_string << std::endl;
+        std::cout << jt.return_token_type() << std::endl;
         std::cerr << "Syntax Error : " + what + std::to_string(line_num)  << std::endl;
         exit(1);
     }
