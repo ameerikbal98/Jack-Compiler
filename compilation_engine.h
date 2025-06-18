@@ -1,5 +1,7 @@
 #pragma once
 #include "jack_tokenizer.h"
+#include "vm_writer.h"
+#include "symbol_table.h"
 #include <string>
 //this is a recursive descent parser
 
@@ -32,12 +34,27 @@ struct xml_string //stores the each tags in the xml
     }
 };
 
+enum subroutine_type
+{
+    constructor,function,method
+};
+
 class compilation_engine
 {
 private:
     tokenizer::jack_tokenizer jt;
+    vm_writer vm_wr;
+    symbol_table symboltable_class{'c'};
+    symbol_table symboltable_subroutine{'s'};
+    std::string class_name;
     xml_string xs;
     int tab_count = 0;
+    subroutine_type sub_type;
+    std::string current_subroutine_name;
+    std::string current_return_type;
+    int subroutine_local_variable_count;
+    int label_count = 0;
+    
 
 public:
     compilation_engine() = default;
@@ -86,8 +103,8 @@ private:
     void compile_if();
     void compile_expression();
     void compile_term();
-    void compile_expression_list();
-    void compile_else();
+    int compile_expression_list();
+    void compile_else(int);
 
     void increment_tab_count()
     {

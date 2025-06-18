@@ -1,5 +1,5 @@
 #include <iostream>
-#include <fstream>
+#include <string>
 
 
 enum segments
@@ -7,39 +7,23 @@ enum segments
     CONST,ARG,STATIC,LOCAL,THIS,THAT,POINTER,TEMP
 };
 
-const char* segments_string[] {"constant","argment","static","local","this","that","pointer","temp"};
+const char* segments_string[] {"constant","argument","static","local","this","that","pointer","temp"};
 
 enum command
 {
-    ADD,SUB,NEG,EQ,GT,LT,AND,OR,NOT
+    ADD,SUB,NEG,EQ,GT,LT,AND,OR,NOT,MUL,DIV
 };
 
-const char* command_string[] {"add","sub","neg","eq","gt","lt","and","or","not"};
-
+const char* command_string[] {"add","sub","neg","eq","gt","lt","and","or","not","MUL","DIV"};
 
 
 class vm_writer
 {
-    std::ofstream filehandle;
+    std::string vm_file;
 public:
-    vm_writer(std::string str)
-    {
-        str = str + ".vm";
-        filehandle.open(str);
+    vm_writer() = default;
 
-        if (!filehandle.is_open())
-        {
-            throw std::runtime_error("Failed to open file: " + str);
-        }
-    }
-
-    ~vm_writer()
-    {
-        if(filehandle.is_open())
-        {
-            filehandle.close();
-        }
-    }
+    std::string return_vm_file() { return vm_file; }
 
 
     void write_pop(segments,int);

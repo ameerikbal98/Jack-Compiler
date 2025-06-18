@@ -7,6 +7,7 @@ enum kind
 {
     static_k, field_k, var_k, arg_k, NONE
 };
+const std::string kind_str[] {"static","field","local","argument","invalid"};
 
 struct symbol
 {
@@ -15,6 +16,8 @@ struct symbol
     kind ki;
     int num;
 };
+
+
 
 class symbol_table
 {
@@ -142,6 +145,20 @@ public:
     int index_of(std::string str)
     {
         return symbols[str].num;
+    }
+
+    bool symbol_exists_of(std::string str)
+    {
+        std::unordered_map<std::string,symbol>::const_iterator got = symbols.find(str);
+        if(got == symbols.end())
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+
     }
 
     

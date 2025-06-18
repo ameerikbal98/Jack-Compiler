@@ -1,54 +1,67 @@
 #include "vm_writer.h"
+#include <string>
 
 
 
 void vm_writer::write_push(segments seg, int num)
 {
-    filehandle << "push " << segments_string[seg]  <<  " " << std::to_string(num) << "\n";
+    vm_file.append(std::string("push ") + segments_string[seg]  +  " " + std::to_string(num) + "\n");
 }
 
 
 void vm_writer::write_pop(segments seg, int num)
 {
-    filehandle << "pop " << segments_string[seg]  <<  " " << std::to_string(num) << "\n";
+    vm_file.append(std::string("pop ") + segments_string[seg]  +  " " + std::to_string(num) + "\n");
 }
 
 
 void vm_writer::write_arithmetic(command com)
 {
-    filehandle << command_string[com] << "\n";
+    if(com == command::MUL)
+    {
+        vm_file.append("call Math.multiply 2\n");
+    }
+    else if(com == command::DIV)
+    {
+        vm_file.append("call Math.division 2\n");
+    }
+    else
+    {
+        vm_file.append(std::string(command_string[com]) + "\n");
+    }
+    
 }
 
 
 void vm_writer::write_label(std::string label)
 {
-    filehandle << "label " << label << "\n";
+    vm_file.append(std::string("label ") + label + "\n");
 }
 
 
 void vm_writer::write_goto(std::string label)
 {
-    filehandle << "goto " << label << "\n";
+    vm_file.append(std::string("goto ") + label + "\n");
 }
 
 
 void vm_writer::write_if(std::string label)
 {
-    filehandle << "if-goto " << label << "\n";
+    vm_file.append(std::string("if-goto ") + label + "\n");
 }
 
 
 void vm_writer::write_call(std::string name, int num)
 {
-    filehandle << "call " << name << " " << num << "\n";
+    vm_file.append(std::string("call ") + name + " " + std::to_string(num) + "\n");
 }
 
 void vm_writer::write_function(std::string name, int num)
 {
-    filehandle << "function " << name << " " << num << "\n";
+    vm_file.append(std::string("function ") + name + " " + std::to_string(num) + "\n");
 }
 
 void vm_writer::write_return()
 {
-    filehandle << "return\n";
+    vm_file.append(std::string("return"));
 }
