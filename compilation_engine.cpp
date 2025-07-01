@@ -1,7 +1,4 @@
 #include "compilation_engine.h"
-#include "vm_writer.h"
-#include "symbol_table.h"
-#include <string>
 
 using keyword_type = tokenizer::keyword_type;
 using token_type = tokenizer::token_type;
@@ -218,7 +215,6 @@ void compilation_engine::compile_class_var_dec() // compiles and create parse tr
     {
         error("Expected a type, line: ", jt.return_linenum());
     }
-
     while (true) // this loop will run until ; symbol is found
     {
 
@@ -252,6 +248,8 @@ void compilation_engine::compile_class_var_dec() // compiles and create parse tr
 
 void compilation_engine::compile_subroutine()
 {
+    current_return_type = "";
+    symboltable_subroutine.start_subroutine();
     subroutine_local_variable_count = 0; //resetting the local variable count
     xs.enter_tag("keyword", tokenizer::KEYWORDS[jt.return_keyword_type()], tab_count);
     if (jt.return_keyword_type() == keyword_type::CONSTRUCTOR)
@@ -301,7 +299,8 @@ void compilation_engine::compile_subroutine()
                   jt.return_keyword_type() == keyword_type::INT || jt.return_keyword_type() == keyword_type::VOID))
 
         {
-            current_return_type = tokenizer::TOKEN_NAMES[jt.return_keyword_type()];
+            current_return_type = tokenizer::KEYWORDS[jt.return_keyword_type()];
+            std::cout << current_return_type << std::endl;
             xs.enter_tag("keyword", tokenizer::KEYWORDS[jt.return_keyword_type()], tab_count);
             jt.advance();
         }
@@ -373,7 +372,19 @@ void compilation_engine::compile_subroutine_body()
         decrement_tab_count();
         xs.enter_tag("/varDec", tab_count);
     }
+    symboltable_subroutine.print_symbols();
     vm_wr.write_function(class_name + "." + current_subroutine_name, subroutine_local_variable_count);
+    if(sub_type == subroutine_type::constructor)
+    {
+        vm_wr.write_push(segments::CONST,symboltable_class.var_count(kind::field_k));
+        vm_wr.write_call("Memory.alloc",1);
+        vm_wr.write_pop(segments::POINTER,0);
+    }
+    else if(sub_type == subroutine_type::method)
+    {
+        vm_wr.write_push(segments::ARG,0);
+        vm_wr.write_pop(segments::POINTER,0);
+    }
     xs.enter_tag("statements", tab_count);
     increment_tab_count();
     compile_statements();
@@ -450,7 +461,6 @@ void compilation_engine::compile_parameter_list()
 void compilation_engine::compile_var_dec()
 {
     std::string var_name, type;
-
     kind ki = kind::var_k;   
     xs.enter_tag("keyword", tokenizer::KEYWORDS[jt.return_keyword_type()], tab_count);
     jt.advance();
@@ -481,7 +491,7 @@ void compilation_engine::compile_var_dec()
     {
         error("Expected identifier, line:", jt.return_linenum());
     }
-
+    std::cout << var_name << " " << type << " " << ki << std::endl;
     symboltable_subroutine.define(var_name, type, ki); //define the variable in symbol table
     subroutine_local_variable_count++;
 
@@ -572,6 +582,7 @@ void compilation_engine::compile_statements()
 void compilation_engine::compile_let()
 {
     std::string target;
+    bool is_array = false;
     xs.enter_tag("keyword", "let", tab_count);
     jt.advance();
     if (jt.return_token_type() == token_type::IDENTIFIER)
@@ -587,6 +598,33 @@ void compilation_engine::compile_let()
 
     if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '[')
     {
+        if(symboltable_class.symbol_exists_of(target))
+        {
+            segments seg = segments::ARG;
+            if(symboltable_class.kind_of(target) == kind::static_k)
+            {
+                seg = segments::STATIC;
+            }
+            else if(symboltable_class.kind_of(target) == kind::field_k)
+            {
+                seg = segments::THIS;
+            }
+            vm_wr.write_push(seg,symboltable_class.index_of(target));
+        }
+        else if(symboltable_subroutine.symbol_exists_of(target))
+        {
+            segments seg = segments::ARG;
+            if(symboltable_subroutine.kind_of(target) == kind::arg_k)
+            {
+                seg = segments::ARG;
+            }
+            else if(symboltable_subroutine.kind_of(target) == kind::var_k)
+            {
+                seg = segments::LOCAL;
+            }
+            vm_wr.write_push(seg,symboltable_subroutine.index_of(target));
+        }
+        is_array = true;
         xs.enter_tag("symbol", "[", tab_count);
         jt.advance();
         xs.enter_tag("expression", tab_count);
@@ -603,7 +641,9 @@ void compilation_engine::compile_let()
         {
             error("Expected ], line: ", jt.return_linenum());
         }
+        vm_wr.write_arithmetic(command::ADD);
     }
+    
 
     if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '=')
     {
@@ -619,6 +659,44 @@ void compilation_engine::compile_let()
     compile_expression();
     decrement_tab_count();
     xs.enter_tag("/expression", tab_count);
+    segments seg = segments::CONST;
+    if(is_array)
+    {
+        vm_wr.write_pop(segments::TEMP,0);
+        vm_wr.write_pop(segments::POINTER,1);
+        vm_wr.write_push(segments::TEMP,0);
+        vm_wr.write_pop(segments::THAT,0);
+    }
+    else
+    {
+        if(symboltable_class.symbol_exists_of(target))
+        {
+            if(symboltable_class.kind_of(target) == kind::static_k)
+            {
+                seg = segments::STATIC;
+            }
+            else if(symboltable_class.kind_of(target) == kind::field_k)
+            {
+                seg = segments::THIS;
+            }
+            vm_wr.write_pop(seg,symboltable_class.index_of(target));
+        }
+        else if(symboltable_subroutine.symbol_exists_of(target))
+        {
+            
+            if(symboltable_subroutine.kind_of(target) == kind::arg_k)
+            {
+                seg = segments::ARG;
+            }
+            else if(symboltable_subroutine.kind_of(target) == kind::var_k)
+            {
+                seg = segments::LOCAL;
+            }
+            vm_wr.write_pop(seg,symboltable_subroutine.index_of(target));
+        }
+    }
+    
+    
     if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ';')
     {
         xs.enter_tag("symbol", ";", tab_count);
@@ -629,34 +707,24 @@ void compilation_engine::compile_let()
 
 void compilation_engine::compile_do()
 {
+    int num_of_args;
+    std::string id1,id2;
     xs.enter_tag("keyword", "do", tab_count);
     jt.advance();
     if (jt.return_token_type() == token_type::IDENTIFIER)
     {
+        id1 = jt.return_identifier_string_const();
         xs.enter_tag("identifier", jt.return_identifier_string_const(), tab_count);
         jt.advance();
     }
-    if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '.')
-    {
-        xs.enter_tag("symbol", ".", tab_count);
-        jt.advance();
-        if (jt.return_token_type() == token_type::IDENTIFIER)
-        {
-            xs.enter_tag("identifier", jt.return_identifier_string_const(), tab_count);
-            jt.advance();
-        }
-        else
-        {
-            error("Expected identifier, line: ", jt.return_linenum());
-        }
-    }
+
     if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '(')
     {
         xs.enter_tag("symbol", "(", tab_count);
         jt.advance();
         xs.enter_tag("expressionList", tab_count);
         increment_tab_count();
-        compile_expression_list();
+        num_of_args = compile_expression_list();
         decrement_tab_count();
         xs.enter_tag("/expressionList", tab_count);
         if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ')')
@@ -668,7 +736,83 @@ void compilation_engine::compile_do()
         {
             error("Expected ) , line: ", jt.return_linenum());
         }
+        vm_wr.write_call(class_name + "." + id1,num_of_args);
+        vm_wr.write_pop(segments::TEMP,0);
     }
+
+    if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '.')
+    {
+        xs.enter_tag("symbol", ".", tab_count);
+        jt.advance();
+        if (jt.return_token_type() == token_type::IDENTIFIER)
+        {
+            id2 = jt.return_identifier_string_const();
+            xs.enter_tag("identifier", jt.return_identifier_string_const(), tab_count);
+            jt.advance();
+        }
+        else
+        {
+            error("Expected identifier, line: ", jt.return_linenum());
+        }
+
+    }
+
+    if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '(')
+    {
+        xs.enter_tag("symbol", "(", tab_count);
+        jt.advance();
+        xs.enter_tag("expressionList", tab_count);
+        increment_tab_count();
+        num_of_args = compile_expression_list();
+        decrement_tab_count();
+        xs.enter_tag("/expressionList", tab_count);
+        if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ')')
+        {
+            xs.enter_tag("symbol", ")", tab_count);
+            jt.advance();
+        }
+        else
+        {
+            error("Expected ) , line: ", jt.return_linenum());
+        }
+        if(symboltable_class.symbol_exists_of(id1))
+        {
+            segments seg;
+            if(symboltable_class.kind_of(id1) == kind::static_k)
+            {
+                seg = segments::STATIC;
+            }
+            else if(symboltable_class.kind_of(id1) == kind::field_k)
+            {
+                seg = segments::THIS;
+            }
+            vm_wr.write_push(seg,symboltable_class.index_of(id1));
+            vm_wr.write_call(id1 + "." + id2,num_of_args);
+        }
+        else if(symboltable_subroutine.symbol_exists_of(id1))
+        {
+            segments seg;
+            if(symboltable_subroutine.kind_of(id1) == kind::var_k)
+            {
+                seg = segments::LOCAL;
+            }
+            else if(symboltable_subroutine.kind_of(id1) == kind::arg_k)
+            {
+                seg = segments::ARG;
+            }
+            vm_wr.write_push(seg,symboltable_subroutine.index_of(id1));
+            vm_wr.write_call(id1 + "." + id2,num_of_args);
+            vm_wr.write_pop(segments::TEMP,0);
+        }
+        else
+        {
+            vm_wr.write_call(id1 + "." + id2 , num_of_args);
+            vm_wr.write_pop(segments::TEMP,0);
+        }
+    }
+    
+
+
     if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ';')
     {
         xs.enter_tag("symbol", ";", tab_count);
@@ -872,6 +1016,11 @@ void compilation_engine::compile_return() // parses return statement
         {
             error("Expected ;, line: ", jt.return_linenum());
         }
+
+        if(current_return_type == "void")
+        {
+            vm_wr.write_push(segments::CONST,0);
+        }
         vm_wr.write_return();
     }
 }
@@ -1011,7 +1160,9 @@ void compilation_engine::compile_term()
     else if (jt.return_token_type() == token_type::STRING_CONST)
     {
         std::string str = jt.return_identifier_string_const();
-        int str_len = str.length();
+        int str_len = 0;
+        if(str!="")
+            str_len = str.length();
         vm_wr.write_push(segments::CONST,str_len);
         vm_wr.write_call("String.new",1);
 
@@ -1026,16 +1177,20 @@ void compilation_engine::compile_term()
     }
     else if (jt.return_token_type() == token_type::KEYWORD && (jt.return_keyword_type() == keyword_type::TRUE || jt.return_keyword_type() == keyword_type::FALSE || jt.return_keyword_type() == keyword_type::THIS || jt.return_keyword_type() == keyword_type::NULL_TYPE))
     {
-        if(jt.return_token_type() == keyword_type::TRUE)
+        if(jt.return_keyword_type() == keyword_type::TRUE)
         {
             vm_wr.write_push(segments::CONST,0);
         }
-        else if(jt.return_token_type() == keyword_type::FALSE)
+        else if(jt.return_keyword_type() == keyword_type::FALSE)
         {
             vm_wr.write_push(segments::CONST,1);
             vm_wr.write_arithmetic(command::NEG);
         }
-        else if(jt.return_token_type() == keyword_type::TRUE)
+        else if(jt.return_keyword_type() == keyword_type::THIS)
+        {
+            vm_wr.write_push(segments::POINTER,0);
+        }
+        else if (jt.return_keyword_type() == keyword_type::NULL_TYPE)
         {
             vm_wr.write_push(segments::CONST,0);
         }
@@ -1046,28 +1201,12 @@ void compilation_engine::compile_term()
     else if (jt.return_token_type() == token_type::IDENTIFIER)
     {
         std::string id1;
+        std::string id2;
         id1 = jt.return_identifier_string_const();
         xs.enter_tag("identifier", jt.return_identifier_string_const(), tab_count);
         jt.advance();
         if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '[')
         {
-            xs.enter_tag("symbol", "[", tab_count);
-            jt.advance();
-            xs.enter_tag("expression", tab_count);
-            increment_tab_count();
-            compile_expression();
-            decrement_tab_count();
-            xs.enter_tag("/expression", tab_count);
-            if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ']')
-            {
-                xs.enter_tag("symbol", "]", tab_count);
-                jt.advance();
-                return;
-            }
-            else
-            {
-                error("Expected ], line: ", jt.return_linenum());
-            }
             if(symboltable_class.symbol_exists_of(id1))
             {
                 segments seg;
@@ -1080,22 +1219,41 @@ void compilation_engine::compile_term()
                     seg = segments::THIS;
                 }
                 vm_wr.write_push(seg,symboltable_class.index_of(id1));
-                vm_wr.write_arithmetic(command::ADD);
             }
             else if(symboltable_subroutine.symbol_exists_of(id1))
             {
                 segments seg;
-                if(symboltable_class.kind_of(id1) == kind::var_k)
+                if(symboltable_subroutine.kind_of(id1) == kind::var_k)
                 {
                     seg = segments::LOCAL;
                 }
-                else if(symboltable_class.kind_of(id1) == kind::arg_k)
+                else if(symboltable_subroutine.kind_of(id1) == kind::arg_k)
                 {
                     seg = segments::ARG;
                 }
-                vm_wr.write_push(seg,symboltable_class.index_of(id1));
-                vm_wr.write_arithmetic(command::ADD);
+                vm_wr.write_push(seg,symboltable_subroutine.index_of(id1));
             }
+            xs.enter_tag("symbol", "[", tab_count);
+            jt.advance();
+            xs.enter_tag("expression", tab_count);
+            increment_tab_count();
+            compile_expression();
+            decrement_tab_count();
+            xs.enter_tag("/expression", tab_count);
+            vm_wr.write_arithmetic(command::ADD);
+            vm_wr.write_pop(segments::POINTER,1);
+            vm_wr.write_push(segments::THAT,0);
+            if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ']')
+            {
+                xs.enter_tag("symbol", "]", tab_count);
+                jt.advance();
+                return;
+            }
+            else
+            {
+                error("Expected ], line: ", jt.return_linenum());
+            }
+            
             
         }
         else if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '.')
@@ -1110,7 +1268,7 @@ void compilation_engine::compile_term()
                 {
                     vm_wr.write_push(segments::LOCAL,symboltable_subroutine.index_of(id1));
                 }
-                id1 = id1 + "." + jt.return_identifier_string_const();
+                id2 = jt.return_identifier_string_const();
                 xs.enter_tag("identifier", jt.return_identifier_string_const(), tab_count);
                 jt.advance();
                 if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '(')
@@ -1122,6 +1280,40 @@ void compilation_engine::compile_term()
                     num = compile_expression_list();
                     decrement_tab_count();
                     xs.enter_tag("/expressionList", tab_count);
+
+                    if(symboltable_class.symbol_exists_of(id1))
+                    {
+                        segments seg;
+                        if(symboltable_class.kind_of(id1) == kind::static_k)
+                        {
+                            seg = segments::STATIC;
+                        }
+                        else if(symboltable_class.kind_of(id1) == kind::field_k)
+                        {
+                            seg = segments::THIS;
+                        }
+                        vm_wr.write_push(seg,symboltable_class.index_of(id1));
+                        vm_wr.write_call(symboltable_class.type_of(id1) + "." + id2,num);
+                    }
+                    else if(symboltable_subroutine.symbol_exists_of(id1))
+                    {
+                        segments seg;
+                        if(symboltable_subroutine.kind_of(id1) == kind::var_k)
+                        {
+                            seg = segments::LOCAL;
+                        }
+                        else if(symboltable_subroutine.kind_of(id1) == kind::arg_k)
+                        {
+                            seg = segments::ARG;
+                        }
+                        vm_wr.write_push(seg,symboltable_subroutine.index_of(id1));
+                        vm_wr.write_call(symboltable_subroutine.type_of(id1) + "." + id2,num);
+                    }
+                    else
+                    {
+                        vm_wr.write_call(id1 + "." + id2 , num);
+                    }
+
                     if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ')')
                     {
                         xs.enter_tag("symbol", ")", tab_count);
@@ -1170,6 +1362,36 @@ void compilation_engine::compile_term()
                 error("Expected ) , line: ", jt.return_linenum());
             }
             vm_wr.write_call(id1,num_of_arg);
+        }
+        else
+        {
+            if(symboltable_class.symbol_exists_of(id1))
+            {
+                segments seg;
+                if(symboltable_class.kind_of(id1) == kind::static_k)
+                {
+                    seg = segments::STATIC;
+                }
+                else if(symboltable_class.kind_of(id1) == kind::field_k)
+                {
+                    seg = segments::THIS;
+                }
+                vm_wr.write_push(seg,symboltable_class.index_of(id1));
+            }
+            else if(symboltable_subroutine.symbol_exists_of(id1))
+            {
+                segments seg;
+                if(symboltable_subroutine.kind_of(id1) == kind::var_k)
+                {
+                    seg = segments::LOCAL;
+                }
+                else if(symboltable_subroutine.kind_of(id1) == kind::arg_k)
+                {
+                    seg = segments::ARG;
+                }
+                vm_wr.write_push(seg,symboltable_subroutine.index_of(id1));
+            }
+
         }
     }
     else if (jt.return_token_type() == token_type::SYMBOL)
@@ -1226,7 +1448,7 @@ void compilation_engine::compile_term()
 
 int compilation_engine::compile_expression_list()
 {
-    int num;
+    int num = 0;
     if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ')')
     {
         return 0;

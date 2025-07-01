@@ -78,6 +78,11 @@ public:
     {
         return xs.xml_string;
     }
+
+    std::string return_vm_file()
+    {
+        return vm_wr.return_vm_file();
+    }
     
 
 private:

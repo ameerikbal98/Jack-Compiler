@@ -20,10 +20,12 @@ jack_analyzer::jack_analyzer(std::string name)
         {
             tokenizer_file_names.push_back("");
             parser_file_names.push_back("");
+            vm_file_names.push_back("");
             if(!(name[i]=='.' && name[i+1] == 'j' && name[i+2] == 'a' && name[i+3] == 'c' && name[i+4] == 'k'))
             {
                 tokenizer_file_names[0].push_back(name[i]);
                 parser_file_names[0].push_back(name[i]);
+                vm_file_names[0].push_back(name[i]);
             }
             else
             {
@@ -33,6 +35,7 @@ jack_analyzer::jack_analyzer(std::string name)
         }
         tokenizer_file_names[0].append("T.xml");
         parser_file_names[0].append(".xml");
+        vm_file_names[0].append(".vm");
     }
     else
     {
@@ -45,6 +48,7 @@ jack_analyzer::jack_analyzer(std::string name)
                 int current_str = file_name.size() - 1;
                 tokenizer_file_names.push_back("");
                 parser_file_names.push_back("");
+                vm_file_names.push_back("");
                 for(int i = 0,length = file_name[current_str].length(); i < length; i++)
                 {
                     
@@ -52,6 +56,7 @@ jack_analyzer::jack_analyzer(std::string name)
                     {
                         tokenizer_file_names[current_str].append(std::string{fname[i]});
                         parser_file_names[current_str].append(std::string{fname[i]});
+                        vm_file_names[current_str].append(std::string{fname[i]});
                     }
                     else
                     {
@@ -60,12 +65,14 @@ jack_analyzer::jack_analyzer(std::string name)
                 }
                 tokenizer_file_names[current_str].append("T.xml");
                 parser_file_names[current_str].append(".xml");
+                vm_file_names[current_str].append(".vm");
             }
         }
     }
     for(int i = 0; i < file_name.size();i++)
     {
         std::cout << file_name[i] << std::endl;
+        std::cout << i << std::endl;
     }
 
     
@@ -79,6 +86,7 @@ void jack_analyzer::analyze()
         std::cout << file_name[i] << std::endl;
         token_filehandle.open(tokenizer_file_names[i]);
         parser_filehandle.open(parser_file_names[i]);
+        vm_handle.open(vm_file_names[i]);
         std::string tokenizer_string{""};
         tokenizer_string.append("<token>\n");
         while(jt.has_more_token())
@@ -124,8 +132,10 @@ void jack_analyzer::analyze()
         compilation_engine engine{jt};
         engine.compile();
         parser_filehandle << engine.return_parse_string();
+        vm_handle << engine.return_vm_file();;
         parser_filehandle.close();
         token_filehandle.close();
+        vm_handle.close();
         
     }
 }

@@ -63,5 +63,5 @@ void vm_writer::write_function(std::string name, int num)
 
 void vm_writer::write_return()
 {
-    vm_file.append(std::string("return"));
+    vm_file.append(std::string("return") + "\n");
 }

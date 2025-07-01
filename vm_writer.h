@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <string>
 
@@ -7,14 +8,14 @@ enum segments
     CONST,ARG,STATIC,LOCAL,THIS,THAT,POINTER,TEMP
 };
 
-const char* segments_string[] {"constant","argument","static","local","this","that","pointer","temp"};
+inline const char* segments_string[] {"constant","argument","static","local","this","that","pointer","temp"};
 
 enum command
 {
     ADD,SUB,NEG,EQ,GT,LT,AND,OR,NOT,MUL,DIV
 };
 
-const char* command_string[] {"add","sub","neg","eq","gt","lt","and","or","not","MUL","DIV"};
+inline const char* command_string[] {"add","sub","neg","eq","gt","lt","and","or","not","MUL","DIV"};
 
 
 class vm_writer

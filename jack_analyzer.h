@@ -18,9 +18,11 @@ private:
     std::vector<std::string> file_name; //stores the file name
     std::vector<std::string> tokenizer_file_names;
     std::vector<std::string> parser_file_names;
+    std::vector<std::string> vm_file_names;
     bool file_or_not; //stores the directory name
     std::ofstream token_filehandle;
     std::ofstream parser_filehandle;
+    std::ofstream vm_handle;
 
 
 public:

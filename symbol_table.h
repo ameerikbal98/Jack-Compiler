@@ -1,3 +1,4 @@
+#pragma once
 #include<iostream>
 #include <unordered_map>
 #include <string>
@@ -107,7 +108,7 @@ public:
     {
         if(table_type == 'c')
         {
-            if(k == kind::field_k && k == kind::static_k)
+            if(k == kind::field_k || k == kind::static_k)
             {
                 return kind_count[k];
             }
@@ -119,7 +120,7 @@ public:
         }
         else 
         {
-            if(k == kind::arg_k && k == kind::var_k)
+            if(k == kind::arg_k || k == kind::var_k)
             {
                 return kind_count[k];
             }
@@ -161,6 +162,12 @@ public:
 
     }
 
-    
+    void print_symbols()
+    {
+        for (auto& it: symbols) {
+    // Do stuff
+            std::cout << it.first << " " << it.second.ki << " " << it.second.num << " " << it.second.symbol_name << " " << it.second.type << std::endl;
+        }
+    }
 
 };
