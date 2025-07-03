@@ -61,6 +61,11 @@ public:
         }
     }
 
+    void set_subroutine_method()
+    {
+        kind_count[kind::arg_k] = 1;
+    }
+
     void define(std::string n,std::string t,kind k) // n = name, t = type, k = kind
     {
         if(table_type == 'c')

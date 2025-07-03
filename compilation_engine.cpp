@@ -285,6 +285,7 @@ void compilation_engine::compile_subroutine()
         }
         else
         {
+            symboltable_subroutine.set_subroutine_method();
             sub_type = subroutine_type::method;
         }
         jt.advance();
@@ -755,62 +756,63 @@ void compilation_engine::compile_do()
             error("Expected identifier, line: ", jt.return_linenum());
         }
 
-    }
-
-    if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '(')
-    {
-        xs.enter_tag("symbol", "(", tab_count);
-        jt.advance();
-        xs.enter_tag("expressionList", tab_count);
-        increment_tab_count();
-        num_of_args = compile_expression_list();
-        decrement_tab_count();
-        xs.enter_tag("/expressionList", tab_count);
-        if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ')')
-        {
-            xs.enter_tag("symbol", ")", tab_count);
-            jt.advance();
-        }
-        else
-        {
-            error("Expected ) , line: ", jt.return_linenum());
-        }
-        if(symboltable_class.symbol_exists_of(id1))
-        {
-            segments seg;
-            if(symboltable_class.kind_of(id1) == kind::static_k)
-            {
-                seg = segments::STATIC;
-            }
-            else if(symboltable_class.kind_of(id1) == kind::field_k)
-            {
-                seg = segments::THIS;
-            }
-            vm_wr.write_push(seg,symboltable_class.index_of(id1));
-            vm_wr.write_call(id1 + "." + id2,num_of_args);
-        }
-        else if(symboltable_subroutine.symbol_exists_of(id1))
-        {
-            segments seg;
-            if(symboltable_subroutine.kind_of(id1) == kind::var_k)
-            {
-                seg = segments::LOCAL;
-            }
-            else if(symboltable_subroutine.kind_of(id1) == kind::arg_k)
-            {
-                seg = segments::ARG;
-            }
-            vm_wr.write_push(seg,symboltable_subroutine.index_of(id1));
-            vm_wr.write_call(id1 + "." + id2,num_of_args);
-            vm_wr.write_pop(segments::TEMP,0);
-        }
-        else
-        {
-            vm_wr.write_call(id1 + "." + id2 , num_of_args);
-            vm_wr.write_pop(segments::TEMP,0);
-        }
-    }
     
+
+        if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '(')
+        {
+            xs.enter_tag("symbol", "(", tab_count);
+            jt.advance();
+            xs.enter_tag("expressionList", tab_count);
+            increment_tab_count();
+            num_of_args = compile_expression_list();
+            decrement_tab_count();
+            xs.enter_tag("/expressionList", tab_count);
+            if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ')')
+            {
+                xs.enter_tag("symbol", ")", tab_count);
+                jt.advance();
+            }
+            else
+            {
+                error("Expected ) , line: ", jt.return_linenum());
+            }
+            if(symboltable_class.symbol_exists_of(id1))
+            {
+                segments seg;
+                if(symboltable_class.kind_of(id1) == kind::static_k)
+                {
+                    seg = segments::STATIC;
+                }
+                else if(symboltable_class.kind_of(id1) == kind::field_k)
+                {
+                    seg = segments::THIS;
+                }
+                vm_wr.write_push(seg,symboltable_class.index_of(id1));
+                vm_wr.write_call(symboltable_class.type_of(id1) + "." + id2,num_of_args + 1);
+                vm_wr.write_pop(segments::TEMP,0);
+            }
+            else if(symboltable_subroutine.symbol_exists_of(id1))
+            {
+                segments seg;
+                if(symboltable_subroutine.kind_of(id1) == kind::var_k)
+                {
+                    seg = segments::LOCAL;
+                }
+                else if(symboltable_subroutine.kind_of(id1) == kind::arg_k)
+                {
+                    seg = segments::ARG;
+                }
+                vm_wr.write_push(seg,symboltable_subroutine.index_of(id1));
+                vm_wr.write_call(symboltable_subroutine.type_of(id1) + "." + id2,num_of_args + 1);
+                vm_wr.write_pop(segments::TEMP,0);
+            }
+            else
+            {
+                vm_wr.write_call(id1 + "." + id2 , num_of_args);
+                vm_wr.write_pop(segments::TEMP,0);
+            }
+        }
+    }
 
 
     if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == ';')
@@ -860,8 +862,11 @@ void compilation_engine::compile_if()
                     xs.enter_tag("symbol", "}", tab_count);
                     jt.advance();
                     vm_wr.write_goto(std::string("L") + std::to_string(this_label_count) + "_end");
+                    vm_wr.write_label(std::string("L") + std::to_string(this_label_count) + "_initial");
                     if (jt.return_token_type() == token_type::KEYWORD && jt.return_keyword_type() == keyword_type::ELSE)
                         compile_else(this_label_count);
+                    
+                    vm_wr.write_label(std::string("L") + std::to_string(this_label_count) + "_end");
                     return;
                 }
                 else
@@ -888,7 +893,6 @@ void compilation_engine::compile_if()
 
 void compilation_engine::compile_else(int this_label_count) // this is technically part of if
 {
-    vm_wr.write_label(std::string("L") + std::to_string(this_label_count) + "_initial");
     xs.enter_tag("keyword", "else", tab_count);
     jt.advance();
     if (jt.return_token_type() == token_type::SYMBOL && jt.return_symbol() == '{')
@@ -904,7 +908,6 @@ void compilation_engine::compile_else(int this_label_count) // this is technical
         {
             xs.enter_tag("symbol", "}", tab_count);
             jt.advance();
-            vm_wr.write_label(std::string("L") + std::to_string(this_label_count) + "_end");
             return;
         }
         else
@@ -1079,7 +1082,7 @@ void compilation_engine::compile_expression()
                 compile_term();
                 decrement_tab_count();
                 xs.enter_tag("/term", tab_count);
-                vm_wr.write_arithmetic(command::MUL);
+                vm_wr.write_arithmetic(command::DIV);
                 break;
             case '&':
                 jt.advance();

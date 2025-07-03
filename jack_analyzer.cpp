@@ -26,6 +26,7 @@ jack_analyzer::jack_analyzer(std::string name)
                 tokenizer_file_names[0].push_back(name[i]);
                 parser_file_names[0].push_back(name[i]);
                 vm_file_names[0].push_back(name[i]);
+                vm_file_name.push_back(name[i]);
             }
             else
             {
@@ -36,9 +37,11 @@ jack_analyzer::jack_analyzer(std::string name)
         tokenizer_file_names[0].append("T.xml");
         parser_file_names[0].append(".xml");
         vm_file_names[0].append(".vm");
+        vm_file_name.append(".vm");
     }
     else
     {
+        vm_file_name = name + "/" +name + ".vm";
         for (const auto & entry : fs::directory_iterator(name))
         {
             if(regex_utils::check_regex_str_exist(entry.path(),std::regex("(\\.jack$)"),".jack",0))

@@ -23,6 +23,7 @@ private:
     std::ofstream token_filehandle;
     std::ofstream parser_filehandle;
     std::ofstream vm_handle;
+    std::string vm_file_name;
 
 
 public:

@@ -11,14 +11,12 @@
 
 int main(int argc, char *argv[])
 {
-    //jack_analyzer v ("Space Fighter");
-    // if(argc != 2)
-    // {
-    //     std::cerr << "Usage : ./[name] filename";
-    //     return(1);
-    // }
+    if(argc != 2)
+    {
+        std::cerr << "Usage : ./[name] filename \n";
+        return(1);
+    }
 
-    // jack_analyzer v (argv[1]);
-    jack_analyzer v("Square");
+    jack_analyzer v (argv[1]);
     v.analyze();
 }
