@@ -23,7 +23,7 @@ void vm_writer::write_arithmetic(command com)
     }
     else if(com == command::DIV)
     {
-        vm_file.append("call Math.division 2\n");
+        vm_file.append("call Math.divide 2\n");
     }
     else
     {
